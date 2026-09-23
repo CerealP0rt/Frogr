@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Frogr</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pond: #1d3a2a;
+    --lily: #6fa35a;
+    --lily-soft: #dcebd3;
+    --sky: #eef5f3;
+    --flower: #d2404d;
+    --paper: #ffffff;
+    --muted: #5b6f63;
+    --cold: #4f86b8;
+    --freezing: #7fb7d9;
+    --extreme: #d2404d;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--sky); color: var(--pond);
+    font: 16px/1.5 "Atkinson Hyperlegible", system-ui, sans-serif; }
+  button, select { font: inherit; color: inherit; }
+  button { border: 0; border-radius: 999px; padding: 9px 18px; cursor: pointer;
+    font-family: "Fredoka", system-ui, sans-serif; font-weight: 500; background: var(--lily-soft); color: var(--pond); }
+  :focus-visible { outline: 3px solid var(--flower); outline-offset: 2px; }
+
+  header { max-width: 1280px; margin: 0 auto; padding: 28px 24px 8px; }
+  h1 { font-family: "Fredoka", sans-serif; font-weight: 600; font-size: 2.4rem; line-height: 1; margin: 0;
+    display: flex; align-items: center; gap: 12px; }
+  .badge { width: 40px; height: 36px; background: var(--lily); clip-path: polygon(50% 0, 100% 100%, 0 100%); position: relative; flex: none; }
+  .badge::after { content: ""; position: absolute; left: 50%; top: 62%; width: 12px; height: 12px;
+    margin: -6px 0 0 -6px; border-radius: 50%; background: var(--flower); }
+  .tally { color: var(--muted); margin: 8px 0 0; max-width: 70ch; }
+  .tally strong { color: var(--pond); font-family: "Fredoka", sans-serif; font-weight: 600; font-size: 1.2rem; }
+
+  .filters { max-width: 1280px; margin: 0 auto; padding: 12px 24px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .filters select { background: var(--paper); border: 1.5px solid #c9d8cf; border-radius: 999px; padding: 7px 12px; }
+  .filters .clear { background: transparent; padding: 7px 10px; text-decoration: underline; }
+  .filters .note { color: var(--muted); font-size: .85rem; }
+  .toggle { display: inline-flex; align-items: center; gap: 8px; background: var(--paper); border: 1.5px solid #c9d8cf;
+    border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+  .toggle input { accent-color: var(--lily); width: 16px; height: 16px; margin: 0; }
+
+  main { max-width: 1280px; margin: 0 auto; padding: 8px 24px 64px; }
+  .block { margin-top: 28px; }
+  .block h2 { font-family: "Fredoka", sans-serif; font-weight: 500; font-size: 1.3rem; margin: 0 0 10px;
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .block h2 span { font-family: "Atkinson Hyperlegible", sans-serif; font-size: .85rem; color: var(--muted); font-weight: 400; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+  .card { background: var(--paper); border-radius: 12px; overflow: hidden; padding: 0; text-align: left;
+    font-family: inherit; font-weight: 400; display: block; width: 100%; }
+  .card img { width: 100%; display: block; aspect-ratio: 16/9; object-fit: cover; background: var(--lily-soft); }
+  .card .cap { padding: 8px 10px; font-size: .82rem; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .num { font-family: "Fredoka", sans-serif; font-weight: 600; font-size: 1rem; }
+  .temp { border-radius: 999px; padding: 1px 8px; font-size: .75rem; color: #fff; background: var(--lily); }
+  .temp.Cold { background: var(--cold); }
+  .temp.Freezing { background: var(--freezing); color: var(--pond); }
+  .temp.Extreme { background: var(--extreme); }
+  .card.missing { background: transparent; border: 2px dashed #b5c9bc; }
+  .card.missing .ph { aspect-ratio: 16/9; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: var(--muted); gap: 2px; }
+  .card.missing .ph .num { font-size: 2rem; color: #9fb5a7; }
+  .card.missing .ph small { font-size: .78rem; }
+  .card.missing .cap { color: var(--muted); }
+  .empty { background: var(--paper); border-radius: 12px; padding: 40px; text-align: center; color: var(--muted); margin-top: 24px; }
+
+  .lightbox { position: fixed; inset: 0; background: rgba(20, 38, 28, .92); display: none;
+    align-items: center; justify-content: center; flex-direction: column; padding: 20px; z-index: 20; }
+  .lightbox.open { display: flex; }
+  .lightbox img { max-width: min(1100px, 100%); max-height: 75vh; border-radius: 12px; background: var(--lily-soft); }
+  .lb-info { color: #fff; margin-top: 14px; text-align: center; }
+  .lb-info .num { font-size: 1.4rem; }
+  .lb-info a { color: var(--lily-soft); font-size: .85rem; word-break: break-all; }
+  .lb-nav { display: flex; gap: 10px; margin-top: 14px; }
+  .lb-close { position: absolute; top: 16px; right: 16px; }
+
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span class="badge" aria-hidden="true"></span>Frogr</h1>
+  <p class="tally"><strong id="total">0</strong> of Google's weather frog pictures found so far</p>
+</header>
+
+<div class="filters">
+  <select id="fCond" aria-label="Weather"></select>
+  <select id="fTime" aria-label="Time of day"></select>
+  <select id="fTemp" aria-label="Temperature"></select>
+  <select id="fLoc" aria-label="Location"></select>
+  <label class="toggle"><input type="checkbox" id="fMissing"> Show missing froggies</label>
+  <button class="clear" id="clearFilters">Show all</button>
+  <span class="note" id="missingNote"></span>
+</div>
+
+<main id="gallery"></main>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Image viewer">
+  <button class="lb-close" id="lbClose">Close</button>
+  <img id="lbImg" alt="">
+  <div class="lb-info" id="lbInfo"></div>
+  <div class="lb-nav">
+    <button id="lbPrev">Previous</button>
+    <button id="lbNext">Next</button>
+  </div>
+</div>
+
+<script>
+// To add new finds: paste their file names (or full URLs) into this list, one per line.
+const FROGGIES = `01_Sunny_Day_Default_UrbanCityPark
+02_Sunny_Day_Default_MushroomHouse
+03_Sunny_Day_Default_LakeBeach
+04_Sunny_Day_Default_Hillside
+05_Sunny_Day_Default_Creek
+08_Sunny_Day_Default_MushroomHouse
+09_Sunny_Day_Default_LakeBeach
+10_Sunny_Day_Cold_UrbanCityPark
+11_Sunny_Day_Cold_SculptureGarden
+12_Sunny_Day_Cold_MushroomHouse
+13_Sunny_Day_Cold_StreetSideCafe-Generic
+15_Sunny_Day_Freezing_UrbanCityPark
+16_Sunny_Day_Freezing_UrbanCityPark
+17_Sunny_Day_Freezing_TrainStation
+20_Sunny_Day_Extreme_InsideFroggysHome
+21_Clear_Night_Default_TrainStation
+22_Clear_Night_Default_Hillside
+23_Clear_Night_Default_Hillside
+24_Clear_Night_Default_MushroomHouse
+25_Clear_Night_Default_UrbanCityPark
+26_Clear_Night_Cold_Hillside
+27_Clear_Night_Cold_MushroomHouse
+28_Clear_Night_Freezing_MushroomHouse
+29_Clear_Night_Freezing_MushroomHouse
+31_Clear_Night_Extreme_InsideFroggysHome
+32_Mostly-Sunny_Day_Default_LakeBeach
+33_Mostly-Sunny_Day_Default_Hillside
+34_Mostly-Sunny_Day_Default_Creek
+35_Mostly-Sunny_Day_Default_MushroomHouse
+36_Mostly-Sunny_Day_Default_SculptureGarden
+37_Mostly-Sunny_Day_Cold_UrbanCityPark
+38_Mostly-Sunny_Day_Cold_StreetSideCafe-Generic
+40_Mostly-Sunny_Day_Freezing_Hillside
+41_Mostly-Sunny_Day_Freezing_LakeBeach
+44_Mostly-Sunny_Day_Extreme_InsideFroggysHome
+45_Mostly-Clear_Night_Default_Hillside
+46_Mostly-Clear_Night_Default_MushroomHouse
+47_Mostly-Clear_Night_Default_Hillside
+48_Mostly-Clear_Night_Cold_MushroomHouse
+49_Mostly-Clear_Night_Cold_Hillside
+50_Mostly-Clear_Night_Freezing_Hillside
+51_Mostly-Clear_Night_Freezing_MushroomHouse
+54_Mostly-Clear_Night_Extreme_InsideFroggysHome
+56_Partly-Cloudy_Day_Default_Hillside
+57_Partly-Cloudy_Day_Default_SculptureGarden
+58_Partly-Cloudy_Day_Default_LakeBeach
+59_Partly-Cloudy_Day_Default_UrbanCityPark
+62_Partly-Cloudy_Day_Default_TrainStation
+63_Partly-Cloudy_Day_Default_MushroomHouse
+64_Partly-Cloudy_Day_Cold_Creek
+65_Partly-Cloudy_Day_Cold_Hillside
+66_Partly-Cloudy_Day_Cold_UrbanCityPark
+67_Partly-Cloudy_Day_Cold_StreetSideCafe-Generic
+69_Partly-Cloudy_Day_Freezing_UrbanCityPark
+70_Partly-Cloudy_Day_Freezing_Creek
+71_Partly-Cloudy_Day_Freezing_StreetSideCafe-Generic
+74_Partly-Cloudy_Day_Extreme_InsideFroggysHome
+75_Partly-Cloudy_Night_Default_Hillside
+76_Partly-Cloudy_Night_Default_MushroomHouse
+77_Partly-Cloudy_Night_Default_StreetsideCafe-Generic
+79_Partly-Cloudy_Night_Default_Hillside
+80_Partly-Cloudy_Night_Default_TrainStation
+81_Partly-Cloudy_Night_Cold_Hillside
+82_Partly-Cloudy_Night_Freezing_MushroomHouse
+84_Partly-Cloudy_Night_Extreme_InsideFroggysHome
+85_Mostly-Cloudy_Day_Default_SculptureGarden
+86_Mostly-Cloudy_Day_Default_StreetSideCafe-Generic
+88_Mostly-Cloudy_Day_Default_Creek
+89_Mostly-Cloudy_Day_Default_UrbanCityPark
+90_Mostly-Cloudy_Day_Default_MushroomHouse
+91_Mostly-Cloudy_Day_Default_UrbanCityPark
+92_Mostly-Cloudy_Day_Default_LakeBeach
+93_Mostly-Cloudy_Day_Cold_StreetSideCafe-Generic
+95_Mostly-Cloudy_Day_Cold_Hillside
+96_Mostly-Cloudy_Day_Freezing_StreetSideCafe-Generic
+98_Mostly-Cloudy_Day_Freezing_Creek
+101_Mostly-Cloudy_Day_Extreme_InsideFroggysHome
+102_Mostly-Cloudy_Night_Default_TrainStation
+103_Mostly-Cloudy_Night_Default_StreetsideCafe-Generic
+105_Mostly-Cloudy_Night_Default_Hillside
+106_Mostly-Cloudy_Night_Default_MushroomHouse
+107_Mostly-Cloudy_Night_Cold_TrainStation
+108_Mostly-Cloudy_Night_Cold_Hillside
+109_Mostly-Cloudy_Night_Freezing_UrbanCityPark
+110_Mostly-Cloudy_Night_Freezing_MushroomHouse
+112_Mostly-Cloudy_Night_Extreme_InsideFroggysHome
+113_Cloudy_Day_Default_Hillside
+114_Cloudy_Day_Default_SculptureGarden
+115_Cloudy_Day_Default_LakeBeach
+116_Cloudy_Day_Cold_Hillside
+117_Cloudy_Day_Cold_SculptureGarden
+118_Cloudy_Day_Cold_StreetSideCafe-Generic
+120_Cloudy_Day_Freezing_Hillside
+122_Cloudy_Day_Extreme_InsideFroggysHome
+123_Windy-Breezy_Day_Default_LakeBeach
+124_Windy-Breezy_Day_Default_Creek
+125_Windy-Breezy_Day_Default_UrbanCityPark
+128_Windy-Breezy_Day_Cold_Creek
+129_Windy-Breezy_Day_Cold_SculptureGarden
+130_Windy-Breezy_Day_Freezing_MushroomHouse
+133_Windy-Breezy_Day_Extreme_InsideFroggysHome
+134_Light-Rain_Day_Default_UrbanCityPark
+135_Light-Rain_Day_Default_TrainStation
+136_Light-Rain_Day_Default_StreetSideCafe-Generic
+138_Light-Rain_Day_Default_SculptureGarden
+139_Light-Rain_Day_Cold_SculptureGarden
+140_Light-Rain_Day_Cold_MushroomHouse
+141_Light-Rain_Day_Cold_UrbanCityPark
+142_Light-Rain_Day_Extreme_InsideFroggysHome
+144_Light-Rain_Night_Default_TrainStation
+147_Light-Rain_Night_Default_Hillside
+148_Light-Rain_Night_Cold_MushroomHouse
+149_Light-Rain_Night_Cold_StreetsideCafe-Generic
+151_Light-Rain_Night_Cold_MushroomHouse
+152_Light-Rain_Night_Extreme_InsideFroggysHome
+153_Med-Heavy-Rain_Day_Default_TrainStation
+154_Med-Heavy-Rain_Day_Default_TrainStation
+155_Med-Heavy-Rain_Day_Default_Hillside
+157_Med-Heavy-Rain_Day_Cold_Creek
+158_Med-Heavy-Rain_Day_Cold_UrbanCityPark
+161_Med-Heavy-Rain_Day_Extreme_InsideFroggysHome
+162_Med-Heavy-Rain_Night_Default_MushroomHouse
+163_Med-Heavy-Rain_Night_Default_TrainStation
+164_Med-Heavy-Rain_Night_Default_StreetsideCafe-Generic
+166_Med-Heavy-Rain_Night_Default_StreetsideCafe-Generic
+168_Med-Heavy-Rain_Night_Cold_MushroomHouse
+169_Med-Heavy-Rain_Night_Cold_MushroomHouse
+170_Med-Heavy-Rain_Night_Cold_StreetsideCafe-Generic
+172_Med-Heavy-Rain_Night_Extreme_InsideFroggysHome
+173_Thunderstorms_Day_Default_MushroomHouse
+174_Thunderstorms_Day_Default_StreetSideCafe-Generic
+178_Thunderstorms_Day_Default_MushroomHouse
+179_Thunderstorms_Day_Cold_MushroomHouse
+184_Thunderstorms_Day_Extreme_InsideFroggysHome
+185_Thunderstorms_Night_Default_MushroomHouse
+186_Thunderstorms_Night_Default_MushroomHouse
+187_Thunderstorms_Night_Default_StreetsideCafe-Generic
+193_Thunderstorms_Night_Cold_StreetsideCafe-Generic
+195_Thunderstorms_Night_Cold_MushroomHouse
+196_Thunderstorms_Night_Extreme_InsideFroggysHome
+221_Light-Snow_Day_Default_StreetSideCafe-Generic
+223_Light-Snow_Day_Default_MushroomHouse
+224_Light-Snow_Day_Default_MushroomHouse
+225_Light-Snow_Day_Default_Hillside
+226_Light-Snow_Day_Extreme_InsideFroggysHome
+227_Light-Snow_Night_Default_MushroomHouse
+228_Light-Snow_Night_Default_Hillside
+229_Light-Snow_Night_Default_StreetsideCafe-Generic
+231_Light-Snow_Night_Extreme_InsideFroggysHome
+232_Med-Heavy-Snow_Day_Default_StreetSideCafe-Generic
+234_Med-Heavy-Snow_Day_Default_Creek
+235_Med-Heavy-Snow_Day_Default_MushroomHouse
+236_Med-Heavy-Snow_Day_Default_UrbanCityPark
+237_Med-Heavy-Snow_Day_Extreme_InsideFroggysHome
+238_Med-Heavy-Snow_Night_Default_MushroomHouse
+239_Med-Heavy-Snow_Night_Default_StreetsideCafe-Generic
+241_Med-Heavy-Snow_Night_Default_TrainStation
+242_Med-Heavy-Snow_Night_Extreme_InsideFroggysHome
+254_Rain-And-Snow-Mix_Day_Cold_UrbanCityPark
+257_Rain-And-Snow-Mix_Day_Extreme_InsideFroggysHome
+263_Haze-Fog-Dust-Smoke_Day_Default_MushroomHouse
+264_Haze-Fog-Dust-Smoke_Day_Default_StreetSideCafe-Generic
+266_Haze-Fog-Dust-Smoke_Day_Default_UrbanCityPark
+267_Haze-Fog-Dust-Smoke_Day_Default_SculptureGarden
+268_Haze-Fog-Dust-Smoke_Day_Default_TrainStation
+269_Haze-Fog-Dust-Smoke_Day_Cold_MushroomHouse
+270_Haze-Fog-Dust-Smoke_Day_Freezing_StreetSideCafe-Generic
+273_Haze-Fog-Dust-Smoke_Day_Extreme_InsideFroggysHome
+274_Haze-Fog-Dust-Smoke_Night_Default_MushroomHouse
+275_Haze-Fog-Dust-Smoke_Night_Default_StreetsideCafe-Generic
+277_Haze-Fog-Dust-Smoke_Night_Default_Hillside
+278_Haze-Fog-Dust-Smoke_Night_Default_Hillside
+279_Haze-Fog-Dust-Smoke_Night_Default_TrainStation
+280_Haze-Fog-Dust-Smoke_Night_Cold_Hillside
+281_Haze-Fog-Dust-Smoke_Night_Freezing_MushroomHouse
+283_Haze-Fog-Dust-Smoke_Night_Extreme_InsideFroggysHome
+284_Cloudy_Night_Default_TrainStation
+285_Cloudy_Night_Default_StreetsideCafe-Generic
+287_Cloudy_Night_Default_Hillside
+288_Cloudy_Night_Cold_TrainStation
+289_Cloudy_Night_Cold_Hillside
+290_Cloudy_Night_Freezing_UrbanCityPark
+291_Cloudy_Night_Freezing_MushroomHouse
+293_Cloudy_Night_Extreme_InsideFroggysHome`;
+
+const BASE = 'https://ssl.gstatic.com/weather/froggie/v2/mobile/sm_l/';
+const NAME_RE = /(\d+)_([^_\/]+)_([^_\/]+)_([^_\/]+)_([^_\/.]+)\.png/;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+const items = [];
+const seen = new Set();
+for (let line of FROGGIES.split('\n')) {
+  line = line.trim();
+  if (!line) continue;
+  let url = line.startsWith('http') ? line : BASE + line;
+  if (!/\.png$/i.test(url)) url += '.png';
+  const m = url.match(NAME_RE);
+  if (!m || seen.has(url)) continue;
+  seen.add(url);
+  items.push({ n: parseInt(m[1], 10), cond: m[2], time: m[3], temp: m[4], loc: m[5], url });
+}
+items.sort((a, b) => a.n - b.n);
+
+let filtered = [];
+let lbIndex = 0;
+
+function fillSelect(id, label, values) {
+  $(id).innerHTML = `<option value="">${label}</option>` + values.map(v => `<option>${esc(v)}</option>`).join('');
+}
+const inOrder = key => [...new Set(items.map(x => x[key]))];
+fillSelect('fCond', 'All weather', inOrder('cond'));
+fillSelect('fTime', 'Day and night', inOrder('time'));
+fillSelect('fTemp', 'All temperatures', inOrder('temp'));
+fillSelect('fLoc', 'All locations', inOrder('loc').sort());
+
+function predict(n) {
+  let lo = null, hi = null;
+  for (const x of items) {
+    if (x.n < n) lo = x;
+    else if (x.n > n) { hi = x; break; }
+  }
+  if (lo && hi && lo.cond === hi.cond && lo.time === hi.time) return { cond: lo.cond, time: lo.time, sure: true };
+  if (lo && hi && lo.temp === 'Extreme' && hi.n - n <= 3) return { cond: hi.cond, time: hi.time, sure: false };
+  if (lo && hi && hi.temp === 'Extreme' && hi.n - n <= 3) return { cond: hi.cond, time: hi.time, sure: false };
+  return null;
+}
+
+function render() {
+  $('total').textContent = items.length;
+  const f = { cond: $('fCond').value, time: $('fTime').value, temp: $('fTemp').value, loc: $('fLoc').value };
+  filtered = items.filter(x => (!f.cond || x.cond === f.cond) && (!f.time || x.time === f.time) &&
+    (!f.temp || x.temp === f.temp) && (!f.loc || x.loc === f.loc));
+
+  let display = filtered.map((x, i) => ({ kind: 'found', n: x.n, cond: x.cond, time: x.time, x, i }));
+  const showMissing = $('fMissing').checked;
+  const missingHidden = showMissing && (f.temp || f.loc);
+  if (showMissing && !missingHidden) {
+    const have = new Set(items.map(x => x.n));
+    const max = Math.max(0, ...have);
+    for (let n = 1; n <= max; n++) {
+      if (have.has(n)) continue;
+      const p = predict(n);
+      const m = { kind: 'missing', n, cond: p ? p.cond : null, time: p ? p.time : null, sure: p ? p.sure : false };
+      if (f.cond && m.cond !== f.cond) continue;
+      if (f.time && m.time !== f.time) continue;
+      display.push(m);
+    }
+    display.sort((a, b) => a.n - b.n);
+  }
+  $('missingNote').textContent = missingHidden ? 'Missing froggies are hidden while a temperature or location filter is on.' : '';
+
+  if (!display.length) {
+    $('gallery').innerHTML = '<div class="empty">No froggies match these filters.</div>';
+    return;
+  }
+
+  const blocks = [];
+  for (const d of display) {
+    const key = d.cond ? d.cond + '|' + d.time : 'unknown';
+    const last = blocks[blocks.length - 1];
+    if (last && last.key === key) last.items.push(d);
+    else blocks.push({ key, cond: d.cond, time: d.time, items: [d] });
+  }
+
+  $('gallery').innerHTML = blocks.map(b => {
+    const first = b.items[0].n, lastN = b.items[b.items.length - 1].n;
+    const nFound = b.items.filter(d => d.kind === 'found').length;
+    const nMiss = b.items.length - nFound;
+    const title = b.cond ? `${esc(b.cond.replace(/-/g, ' '))}, ${esc(b.time.toLowerCase())}` : 'Unknown weather';
+    const counts = [nFound ? `${nFound} found` : '', nMiss ? `${nMiss} missing` : ''].filter(Boolean).join(', ');
+    return `<section class="block">
+      <h2>${title} <span>#${first}${lastN !== first ? '–' + lastN : ''}, ${counts}</span></h2>
+      <div class="grid">${b.items.map(d => d.kind === 'found' ? `
+        <button class="card" data-i="${d.i}">
+          <img loading="lazy" src="${esc(d.x.url)}" alt="${esc(d.x.cond)} ${esc(d.x.time)}, ${esc(d.x.temp)}, ${esc(d.x.loc)}">
+          <span class="cap"><span class="num">${d.x.n}</span><span class="temp ${esc(d.x.temp)}">${esc(d.x.temp)}</span>${esc(d.x.loc)}</span>
+        </button>` : `
+        <div class="card missing">
+          <span class="ph"><span class="num">${d.n}</span><small>not found yet</small></span>
+          <span class="cap">${d.cond ? (d.sure ? '' : 'probably ') + esc(d.cond.replace(/-/g, ' ')) + ', ' + esc(d.time.toLowerCase()) : 'weather unknown'}</span>
+        </div>`).join('')}</div>
+    </section>`;
+  }).join('');
+}
+
+function openLightbox(i) {
+  lbIndex = i;
+  const x = filtered[i];
+  if (!x) return;
+  $('lbImg').src = x.url;
+  $('lbImg').alt = `${x.cond} ${x.time}, ${x.temp}, ${x.loc}`;
+  $('lbInfo').innerHTML = `<div><span class="num">#${x.n}</span> ${esc(x.cond.replace(/-/g, ' '))}, ${esc(x.time.toLowerCase())}, ${esc(x.temp.toLowerCase())}, ${esc(x.loc)}</div>
+    <a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.url)}</a>
+    <div style="font-size:.8rem;opacity:.8;margin-top:4px">${i + 1} of ${filtered.length}</div>`;
+  $('lightbox').classList.add('open');
+  $('lbClose').focus();
+}
+function closeLightbox() { $('lightbox').classList.remove('open'); }
+function stepLightbox(d) { openLightbox((lbIndex + d + filtered.length) % filtered.length); }
+
+$('gallery').addEventListener('click', e => {
+  const card = e.target.closest('button.card');
+  if (card) openLightbox(parseInt(card.dataset.i, 10));
+});
+$('lbClose').onclick = closeLightbox;
+$('lbPrev').onclick = () => stepLightbox(-1);
+$('lbNext').onclick = () => stepLightbox(1);
+$('lightbox').addEventListener('click', e => { if (e.target.id === 'lightbox') closeLightbox(); });
+document.addEventListener('keydown', e => {
+  if (!$('lightbox').classList.contains('open')) return;
+  if (e.key === 'Escape') closeLightbox();
+  if (e.key === 'ArrowLeft') stepLightbox(-1);
+  if (e.key === 'ArrowRight') stepLightbox(1);
+});
+
+for (const id of ['fCond', 'fTime', 'fTemp', 'fLoc']) $(id).onchange = render;
+$('fMissing').onchange = () => {
+  try { localStorage.setItem('frogr.showMissing', $('fMissing').checked ? '1' : ''); } catch {}
+  render();
+};
+try { $('fMissing').checked = localStorage.getItem('frogr.showMissing') === '1'; } catch {}
+$('clearFilters').onclick = () => { for (const id of ['fCond', 'fTime', 'fTemp', 'fLoc']) $(id).value = ''; render(); };
+
+render();
+</script>
+</body>
+</html>
